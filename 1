@@ -1,0 +1,99 @@
+Skip to content
+Search or jump to…
+Pulls
+Issues
+Marketplace
+Explore
+ 
+@pirator21 
+insidegui
+/
+MultipeerKit
+Public
+Code
+Issues
+1
+Pull requests
+1
+Discussions
+Actions
+Security
+More
+MultipeerKit/Tests/MultipeerKitTests/MultipeerKitTests.swift
+@CallumTodd7
+CallumTodd7 Exposed sender information
+Latest commit 83d9888 on 1 Jul 2020
+ History
+ 2 contributors
+@insidegui@CallumTodd7
+56 lines (43 sloc)  1.54 KB
+   
+import XCTest
+@testable import MultipeerKit
+
+fileprivate extension MultipeerTransceiver {
+    var mockConnection: MockMultipeerConnection {
+        connection as! MockMultipeerConnection
+    }
+}
+
+fileprivate struct TestPayload: Hashable, Codable {
+    let n: Int
+}
+
+final class MultipeerKitTests: XCTestCase {
+
+    private func makeMockTransceiver() -> MultipeerTransceiver {
+        MultipeerTransceiver(connection: MockMultipeerConnection())
+    }
+
+    func testCallingResumeResumesConnection() {
+        let mock = makeMockTransceiver()
+        mock.resume()
+        XCTAssertEqual(mock.mockConnection.isRunning, true)
+    }
+
+    func testCallingStopStopsConnection() {
+        let mock = makeMockTransceiver()
+        mock.resume()
+        mock.stop()
+        XCTAssertEqual(mock.mockConnection.isRunning, false)
+    }
+
+    func testReceivingCustomPayload() {
+        let mock = makeMockTransceiver()
+        let tsPayload = TestPayload(n: 42)
+
+        let expect = XCTestExpectation(description: "Receive payload")
+
+        mock.receive(TestPayload.self) { payload, sender in
+            XCTAssertEqual(payload, tsPayload)
+            XCTAssertEqual(sender.id, mock.localPeerId!)
+
+            expect.fulfill()
+        }
+
+        mock.broadcast(tsPayload)
+
+        wait(for: [expect], timeout: 2)
+    }
+
+    static var allTests = [
+        ("testCallingResumeResumesConnection", testCallingResumeResumesConnection),
+        ("testCallingStopStopsConnection", testCallingStopStopsConnection),
+        ("testReceivingCustomPayload", testReceivingCustomPayload),
+    ]
+}
+© 2022 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Docs
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
+Loading complete
